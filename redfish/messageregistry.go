@@ -140,7 +140,7 @@ func GetMessageRegistry(c common.Client, uri string) (*MessageRegistry, error) {
 // ListReferencedMessageRegistries gets the collection of MessageRegistry.
 func ListReferencedMessageRegistries(c common.Client, link string) ([]*MessageRegistry, error) {
 	var result []*MessageRegistry
-	links, err := common.GetCollection(c, link)
+	links, err := common.GetCollection[MessageRegistry](c, link)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func ListReferencedMessageRegistriesByLanguage(c common.Client, link, language s
 
 	// TODO: Looks at what to do to make parallel.
 	var result []*MessageRegistry
-	links, err := common.GetCollection(c, link)
+	links, err := common.GetCollection[MessageRegistry](c, link)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func GetMessageRegistryByLanguage(
 	}
 
 	// TODO: Look at what to do to make parallel
-	links, err := common.GetCollection(c, link)
+	links, err := common.GetCollection[MessageRegistry](c, link)
 	if err != nil {
 		return nil, err
 	}

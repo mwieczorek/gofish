@@ -46,12 +46,21 @@ func (c *Collection) UnmarshalJSON(b []byte) error {
 }
 
 // GetCollection retrieves a collection from the service.
-func GetCollection(c Client, uri string) (*Collection, error) {
-	resp, err := c.Get(uri)
+func GetCollection[T any](c Client, uri string, queryOpts ...QueryOption) (*Collection, error) {
+	resp, err := c.Get(BuildQuery(uri, queryOpts...))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	type temp Collection
+	var t struct {
+		temp
+		ODataCount int             `json:"@odata.count"`
+		Count      int             `json:"Members@odata.count"`
+		Members    []T             `json:"Members"`
+		Links      LinksCollection `json:"Links"`
+	}
 
 	var result Collection
 	err = json.NewDecoder(resp.Body).Decode(&result)
@@ -102,15 +111,15 @@ func (cr *CollectionError) Error() string {
 }
 
 // CollectList will retrieve a collection of entities from the Redfish service.
-func CollectList(get func(string), c Client, link string, queryOpts ...QueryOption) error {
-	collection, err := GetCollection(c, link)
+func CollectList[T any](get func(string), c Client, link string, queryOpts ...QueryOption) error {
+	collection, err := GetCollection[T](c, link, queryOpts...)
 	if err != nil {
 		return err
 	}
 
 	CollectCollection(get, collection.ItemLinks, queryOpts...)
 	if collection.MembersNextLink != "" {
-		err := CollectList(get, c, collection.MembersNextLink)
+		err := CollectList[T](get, c, collection.MembersNextLink)
 		if err != nil {
 			return err
 		}
@@ -162,7 +171,7 @@ func GetCollectionObjects[T any, PT interface {
 	}
 
 	go func() {
-		err := CollectList(get, c, uri, queryOpts...)
+		err := CollectList[T](get, c, uri, queryOpts...)
 		if err != nil {
 			collectionError.Failures[uri] = err
 		}
